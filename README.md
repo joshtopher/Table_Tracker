@@ -3,5 +3,6 @@ A web app that helps people keep track of stats for DnD and other tabletop games
 
 Progress Log:
 
-Added a login / signup landing page
-Added lobbies that can be joined with 6-character codes
+ - Added a login / signup landing page
+ - Added lobbies that can be joined with 6-character codes
+
