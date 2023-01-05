@@ -40,7 +40,7 @@ def register():
     if user:
         return "Username Taken"
     else:
-        user_ref = db.collection('users').add({
+        db.collection('users').add({
             'username': username,
             'password': pwd
         })
@@ -104,7 +104,15 @@ def join(data):
     room_id = data['room']
     join_room(room_id)
     print(room_id, flush=True)
-    emit('joined', f"{username} has joined!", to=room_id)
+    emit('message', f"{username} has joined!", to=room_id)
+
+
+@socket.event()
+def message(data):
+    room_id = data['room']
+    msg = escape_html(data['msg'])
+    username = data['username']
+    emit('message', f"{username}: {msg}", to=room_id)
 
 
 if __name__ == '__main__':

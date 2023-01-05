@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Math Duel Lobby</title>
+    <title>Lobby</title>
 </head>
 <body>
     <h2>DO NOT REFRESH!</h2>
@@ -12,9 +12,9 @@
 
     <div id="chat"></div>
 
-    <form id="answer" method="POST" action=''>
-        <input type="text" name="answer_question" id="answer_question">
-        <input type="submit" value="Answer">
+    <form id="new_message" method="POST" action="">
+        <input type="text" name="message" id="message">
+        <input type="submit" value="Send">
     </form>
 
 
@@ -31,10 +31,15 @@
                 socket.emit("join", { "username": "{{ user }}", "room": "{{ id }}" });
             });
 
-            socket.on('joined', function(msg){
+            socket.on('message', function(msg){
                 let chat = $('#chat');
                 chat.append('<p>' + msg + '</p>');
-            })
+            });
+
+            $('form#new_message').submit(function(event){
+                socket.emit("message", {"msg": $('#message').val(), "room": "{{ id }}", "username": "{{ user }}"});
+                return false;
+            });
         });
     </script>
 </html>
