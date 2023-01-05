@@ -6,4 +6,5 @@ Progress Log:
 
  - Added a login / signup landing page
  - Added lobbies that can be joined with 6-character codes
+ - Added a live chat
 
