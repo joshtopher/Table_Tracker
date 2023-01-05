@@ -35,7 +35,7 @@ def home_page():
 def register():
     username = escape_html(request.form['username'])
     pwd = request.form['password']
-    if sum(c for c in username if c not in allchars) > 0 or len(username) > 20:
+    if sum(c for c in username if c not in all_chars) > 0 or len(username) > 20:
         return "Invalid username"
     if len(pwd) < 8 or len(pwd) > 20:
         return "Invalid Password"
