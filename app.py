@@ -124,8 +124,24 @@ def join(data):
     username = data['username']
     room_id = data['room']
     join_room(room_id)
-    print(room_id, flush=True)
     emit('message', f"{username} has joined!", to=room_id)
+
+
+@socket.event()
+def player_leave(data):
+    room_id = data['room']
+    username = data['username']
+    lobbies[room_id].remove(username)
+    emit('message', f"{username} left the lobby", to=room_id)
+    leave_room(room_id)
+
+
+@socket.event()
+def dm_leave(data):
+    room_id = data['room']
+    emit('message', f"Lobby {room_id} is now closed", to=room_id)
+    del lobbies[room_id]
+    leave_room(room_id)
 
 
 @socket.event()

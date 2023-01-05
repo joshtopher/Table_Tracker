@@ -32,6 +32,9 @@
             socket.on('connect', function() {
                 socket.emit("join", { "username": "{{ user }}", "room": "{{ id }}" });
             });
+            window.onbeforeunload = function () {
+            socket.emit('dm_leave', {"username": "{{ user }}", "room": "{{ id }}" });
+            };
 
             socket.on('message', function(msg){
                 let chat = $('#chat');
