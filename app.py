@@ -106,7 +106,7 @@ def create_lobby():
     username = request.cookies.get('username')
     if username:
         lobbies[lobby_id] = [username]
-        return render_template('lobby.html', id=lobby_id, user=username, async_mode="threading")
+        return render_template('dm_lobby.html', id=lobby_id, user=username, async_mode="threading")
     else:
         return redirect('/')
 
