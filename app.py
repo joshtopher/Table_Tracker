@@ -14,7 +14,7 @@ socket = SocketIO(app)
 # dict of lobby id to list of users in lobby
 lobbies = {}
 
-all_chars = "ABCDEFGHIJKLMONPQRSTUVWXYZabcdefghiklmopqrstuvwxyz1234567890_-"
+all_chars = "ABCDEFGHIJKLMONPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890_-"
 
 
 @app.get('/')
@@ -35,9 +35,9 @@ def home_page():
 def register():
     username = escape_html(request.form['username'])
     pwd = request.form['password']
-    if sum(c for c in username if c not in all_chars) > 0 or len(username) > 20:
-        return "Invalid username"
-    if len(pwd) < 8 or len(pwd) > 20:
+    if not valid_username(username):
+        return "Invalid Username"
+    if len(pwd) < 6 or len(pwd) > 20:
         return "Invalid Password"
     users_ref = db.collection('users').where('username', '==', username)
     user = users_ref.get()
@@ -117,6 +117,15 @@ def message(data):
     msg = escape_html(data['msg'])
     username = data['username']
     emit('message', f"{username}: {msg}", to=room_id)
+
+
+def valid_username(username):
+    for char in username:
+        if char not in all_chars:
+            return False
+    if len(username) < 3 or len(username) > 20:
+        return False
+    return True
 
 
 if __name__ == '__main__':
