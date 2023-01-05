@@ -6,6 +6,14 @@
 </head>
 <body>
     <p>Welcome {{ username }}</p>
+    <a href="/logout">Logout</a>
+    <a href="/create-lobby">Create Lobby</a>
+    <form action="/join-lobby" method="post">
+        <label for="lobby_id">Lobby ID: </label>
+        <input id="lobby_id" type="text" name="lobby_id">
+        <input type="submit" value="Join Lobby">
+    </form>
+
 
 </body>
 </html>

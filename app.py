@@ -31,6 +31,13 @@ def home_page():
         return redirect("/")
 
 
+@app.get('/logout')
+def logout():
+    response = redirect("/")
+    response.set_cookie("username", "", expires=0)
+    return response
+
+
 @app.post('/signup')
 def register():
     username = escape_html(request.form['username'])
@@ -69,8 +76,19 @@ def login():
             return response
 
 
+@app.post('/join-lobby')
+def join_lobby():
+    lobby_id = request.form['lobby_id']
+    if lobby_id not in lobbies.keys():
+        return "Lobby does not exist"
+    else:
+        username = request.cookies.get('username')
+        lobbies[lobby_id].append(username)
+        return redirect(f'/lobby/{lobby_id}')
+
+
 @app.get('/lobby/<lobby_id>')
-def join_lobby(lobby_id):
+def lobby(lobby_id):
     if lobby_id in lobbies.keys():
         username = request.cookies.get('username')
         if username:
