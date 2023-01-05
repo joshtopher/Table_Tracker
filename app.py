@@ -97,7 +97,7 @@ def lobby(lobby_id):
         else:
             return redirect('/')
     else:
-        return "Invalid Lobby Code"
+        return "Invalid Lobby Code, please try again"
 
 
 @app.get('/create-lobby')
