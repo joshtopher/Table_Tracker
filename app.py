@@ -8,12 +8,13 @@ cred = credentials.Certificate("config.json")
 fb = firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-
 app = Flask(__name__)
 socket = SocketIO(app)
 
 # dict of lobby id to list of users in lobby
 lobbies = {}
+
+all_chars = "ABCDEFGHIJKLMONPQRSTUVWXYZabcdefghiklmopqrstuvwxyz1234567890_-"
 
 
 @app.get('/')
@@ -34,7 +35,10 @@ def home_page():
 def register():
     username = escape_html(request.form['username'])
     pwd = request.form['password']
-
+    if sum(c for c in username if c not in allchars) > 0 or len(username) > 20:
+        return "Invalid username"
+    if len(pwd) < 8 or len(pwd) > 20:
+        return "Invalid Password"
     users_ref = db.collection('users').where('username', '==', username)
     user = users_ref.get()
     if user:
@@ -117,4 +121,3 @@ def message(data):
 
 if __name__ == '__main__':
     socket.run(app, allow_unsafe_werkzeug=True, debug=True)
-
