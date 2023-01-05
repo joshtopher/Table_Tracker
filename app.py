@@ -98,7 +98,6 @@ def generate_lobby_id():
 
 
 def escape_html(text):
-    """Returns a version of the input string with escaped html."""
     return text.replace('&', '&amp').replace('<', '&lt').replace('>', '&gt')
 
 
