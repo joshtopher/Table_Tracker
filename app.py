@@ -3,6 +3,7 @@ import firebase_admin
 from flask_socketio import SocketIO, join_room, leave_room, emit
 from firebase_admin import credentials, firestore
 import random
+import time
 
 cred = credentials.Certificate("config.json")
 fb = firebase_admin.initialize_app(cred)
@@ -139,25 +140,28 @@ def join(data):
     username = data['username']
     room_id = data['room']
     join_room(room_id)
-    emit('message', f"{username} has joined!", to=room_id)
 
 
 @socket.event()
 def player_leave(data):
-    room_id = data['room']
-    username = data['username']
-    lobbies[room_id].remove(username)
-    emit('message', f"{username} left the lobby", to=room_id)
-    leave_room(room_id)
+    time.sleep(3)
+    if data['username'] not in lobbies[data['room']]:
+        room_id = data['room']
+        username = data['username']
+        lobbies[room_id].remove(username)
+        emit('message', f"{username} left the lobby", to=room_id)
+        leave_room(room_id)
 
 
 @socket.event()
 def dm_leave(data):
-    room_id = data['room']
-    emit('message', f"Lobby {room_id} is now closed", to=room_id)
-    leave_room(room_id)
-    del lobbies[room_id]
-    emit('close', to=room_id)
+    time.sleep(3)
+    if data['username'] not in lobbies[data['room']]:
+        room_id = data['room']
+        emit('message', f"Lobby {room_id} is now closed", to=room_id)
+        leave_room(room_id)
+        del lobbies[room_id]
+        emit('close', to=room_id)
 
 
 @socket.event()
