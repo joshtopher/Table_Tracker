@@ -37,7 +37,9 @@
                 let chat = $('#chat');
                 chat.append('<p>' + msg + '</p>');
             });
-
+            socket.on('close', function(){
+                window.location.href = "/";
+            });
             $('form#new_message').submit(function(event){
                 socket.emit("message", {"msg": $('#message').val(), "room": "{{ id }}", "username": "{{ user }}"});
                 return false;
