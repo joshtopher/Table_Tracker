@@ -5,6 +5,8 @@ A web app that helps people keep track of stats for tabletop games Uses firebase
 Progress Log:
 
  - Added a login / signup landing page
- - Added lobbies that can be joined with 6-character codes
+ - Added tables
+ - Added features to create and join tables
  - Added a live chat
+
 
