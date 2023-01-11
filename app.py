@@ -22,14 +22,23 @@ all_chars = "ABCDEFGHIJKLMONPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890_-"
 def landing_page():
     username = request.cookies.get('username')
     if username:
-        return redirect('/home')
+        response = redirect('/home')
+        response.set_cookie('lobby', '')
+        response.set_cookie('dm', 'false')
+        return response
     return render_template('landing.html')
 
 
 @app.get('/home')
 def home_page():
     username = request.cookies.get("username")
+    lobby_id = request.cookies.get("lobby")
     if username:
+        if lobby_id != "":
+            response = redirect('/home')
+            response.set_cookie('lobby', '')
+            response.set_cookie('dm', 'false')
+            return response
         return render_template('home.html', username=username)
     else:
         return redirect("/")
@@ -88,8 +97,6 @@ def join_lobby():
     if lobby_id not in lobbies.keys():
         return "Lobby does not exist"
     else:
-        username = request.cookies.get('username')
-        lobbies[lobby_id].append(username)
         response = redirect(f'/lobby/{lobby_id}')
         response.set_cookie('lobby_id', lobby_id)
         response.set_cookie('dm', 'false')
@@ -102,13 +109,13 @@ def lobby(lobby_id):
         username = request.cookies.get('username')
         is_dm = request.cookies.get('dm')
         if username:
+            lobbies[lobby_id].append(username)
             if is_dm == 'true':
                 return render_template('dm_lobby.html', id=lobby_id, user=username, async_mode="threading")
             else:
-                lobbies[lobby_id].append(username)
                 return render_template('lobby.html', id=lobby_id, user=username, async_mode="threading")
         else:
-            return redirect('/')
+            return redirect('/home')
     else:
         return "Invalid Lobby Code, please try again"
 
@@ -118,13 +125,13 @@ def create_lobby():
     lobby_id = generate_lobby_id()
     username = request.cookies.get('username')
     if username:
-        lobbies[lobby_id] = [username]
-        response = redirect('/lobby/' + lobby_id)
+        lobbies[lobby_id] = []
+        response = redirect(f'/lobby/{lobby_id}')
         response.set_cookie('lobby_id', lobby_id)
         response.set_cookie('dm', 'true')
         return response
     else:
-        return redirect('/')
+        return redirect('/home')
 
 
 def generate_lobby_id():
@@ -137,31 +144,33 @@ def escape_html(text):
 
 @socket.event()
 def join(data):
-    username = data['username']
     room_id = data['room']
     join_room(room_id)
 
 
 @socket.event()
 def player_leave(data):
-    time.sleep(3)
-    if data['username'] not in lobbies[data['room']]:
-        room_id = data['room']
-        username = data['username']
-        lobbies[room_id].remove(username)
+    room_id = data['room']
+    username = data['username']
+    lobbies[room_id].remove(username)
+    time.sleep(1)
+    if username not in lobbies[room_id]:
         emit('message', f"{username} left the lobby", to=room_id)
         leave_room(room_id)
 
 
 @socket.event()
 def dm_leave(data):
-    time.sleep(3)
-    if data['username'] not in lobbies[data['room']]:
-        room_id = data['room']
+    room_id = data['room']
+    username = data['username']
+    if room_id in lobbies.keys():
+        lobbies[room_id].remove(username)
+    time.sleep(1)
+    if username not in lobbies[room_id]:
         emit('message', f"Lobby {room_id} is now closed", to=room_id)
+        emit('close', to=room_id)
         leave_room(room_id)
         del lobbies[room_id]
-        emit('close', to=room_id)
 
 
 @socket.event()
