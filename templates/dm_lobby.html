@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Lobby</title>
+    <title>table</title>
 </head>
 <body>
     <p id="this_user">Welcome: {{ user }}</p>
-    <p>Lobby id: {{ id }}</p>
+    <p>table id: {{ id }}</p>
     <a href="/">Home</a>
     <a href="/new-game">New Game</a>
     <a href="/load-game">Continue Game</a>
@@ -29,10 +29,10 @@
             let socket = io('ws://' + window.location.host);
 
             socket.on('connect', function() {
-                socket.emit("join", { "username": "{{ user }}", "room": "{{ id }}" });
+                socket.emit("join", { "username": "{{ user }}", "table": "{{ id }}" });
             });
             window.onbeforeunload = function () {
-            socket.emit('gm_leave', {"username": "{{ user }}", "room": "{{ id }}" });
+            socket.emit('gm_leave', {"username": "{{ user }}", "table": "{{ id }}" });
             };
 
             socket.on('message', function(msg){
@@ -45,7 +45,7 @@
             });
 
             $('form#new_message').submit(function(event){
-                socket.emit("message", {"msg": $('#message').val(), "room": "{{ id }}", "username": "{{ user }}"});
+                socket.emit("message", {"msg": $('#message').val(), "table": "{{ id }}", "username": "{{ user }}"});
                 return false;
             });
         });

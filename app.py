@@ -12,8 +12,8 @@ db = firestore.client()
 app = Flask(__name__)
 socket = SocketIO(app)
 
-# dict of lobby id to list of users in lobby
-lobbies = {}
+# dict of table id to list of users in table
+tables = {}
 
 all_chars = "ABCDEFGHIJKLMONPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890_-"
 
@@ -23,21 +23,20 @@ def landing_page():
     username = request.cookies.get('username')
     if username:
         response = redirect('/home')
-        response.set_cookie('lobby', '')
+        response.set_cookie('table', '')
         response.set_cookie('gm', 'false')
         return response
-
     return render_template('landing.html')
 
 
 @app.get('/home')
 def home_page():
     username = request.cookies.get("username")
-    lobby_id = request.cookies.get("lobby")
+    table_id = request.cookies.get("table")
     if username:
-        if lobby_id != "":
+        if table_id != "":
             response = redirect('/home')
-            response.set_cookie('lobby', '')
+            response.set_cookie('table', '')
             response.set_cookie('gm', 'false')
             return response
         return render_template('home.html', username=username)
@@ -49,7 +48,7 @@ def home_page():
 def logout():
     response = redirect("/")
     response.set_cookie("username", "", expires=0)
-    response.set_cookie('lobby', '', expires=0)
+    response.set_cookie('table', '', expires=0)
     response.set_cookie('gm', 'false', expires=0)
     return response
 
@@ -89,54 +88,54 @@ def login():
         else:
             response = redirect("/home")
             response.set_cookie('username', username)
-            response.set_cookie('lobby', '')
+            response.set_cookie('table', '')
             return response
 
 
-@app.post('/join-lobby')
-def join_lobby():
-    lobby_id = request.form['lobby_id']
-    if lobby_id not in lobbies.keys():
-        return "Lobby does not exist"
+@app.post('/join-table')
+def join_table():
+    table_id = request.form['table_id']
+    if table_id not in tables.keys():
+        return "table does not exist"
     else:
-        response = redirect(f'/lobby/{lobby_id}')
-        response.set_cookie('lobby_id', lobby_id)
+        response = redirect(f'/table/{table_id}')
+        response.set_cookie('table_id', table_id)
         response.set_cookie('gm', 'false')
         return response
 
 
-@app.get('/lobby/<lobby_id>')
-def lobby(lobby_id):
-    if lobby_id in lobbies.keys():
+@app.get('/table/<table_id>')
+def table(table_id):
+    if table_id in tables.keys():
         username = request.cookies.get('username')
         is_gm = request.cookies.get('gm')
         if username:
-            lobbies[lobby_id].append(username)
+            tables[table_id].append(username)
             if is_gm == 'true':
-                return render_template('dm_lobby.html', id=lobby_id, user=username, async_mode="threading")
+                return render_template('dm_lobby.html', id=table_id, user=username, async_mode="threading")
             else:
-                return render_template('lobby.html', id=lobby_id, user=username, async_mode="threading")
+                return render_template('lobby.html', id=table_id, user=username, async_mode="threading")
         else:
             return redirect('/home')
     else:
-        return "Invalid Lobby Code, please try again"
+        return "Invalid table Code, please try again"
 
 
-@app.get('/create-lobby')
-def create_lobby():
-    lobby_id = generate_lobby_id()
+@app.get('/create-table')
+def create_table():
+    table_id = generate_table_id()
     username = request.cookies.get('username')
     if username:
-        lobbies[lobby_id] = []
-        response = redirect(f'/lobby/{lobby_id}')
-        response.set_cookie('lobby_id', lobby_id)
+        tables[table_id] = []
+        response = redirect(f'/table/{table_id}')
+        response.set_cookie('table_id', table_id)
         response.set_cookie('gm', 'true')
         return response
     else:
         return redirect('/home')
 
 
-def generate_lobby_id():
+def generate_table_id():
     return ''.join(random.choice("abcdefghiklmopqrstuvwxyz1234567890") for _ in range(6))
 
 
@@ -146,44 +145,44 @@ def escape_html(text):
 
 @socket.event()
 def join(data):
-    room_id = data['room']
-    join_room(room_id)
+    table_id = data['table']
+    join_room(table_id)
 
 
 @socket.event()
 def player_leave(data):
-    room_id = data['room']
+    table_id = data['table']
     username = data['username']
-    lobbies[room_id].remove(username)
+    tables[table_id].remove(username)
     time.sleep(1)
-    if username not in lobbies[room_id]:
-        emit('message', f"{username} left the lobby", to=room_id)
-        leave_room(room_id)
+    if username not in tables[table_id]:
+        emit('message', f"{username} left the table", to=table_id)
+        leave_room(table_id)
 
 
 @socket.event()
 def gm_leave(data):
-    room_id = data['room']
+    table_id = data['table']
     username = data['username']
-    if room_id in lobbies.keys():
-        lobbies[room_id].remove(username)
+    if table_id in tables.keys():
+        tables[table_id].remove(username)
     time.sleep(1)
-    if username not in lobbies[room_id]:
-        emit('message', f"Lobby {room_id} is now closed", to=room_id)
-        emit('close', to=room_id)
-        leave_room(room_id)
-        del lobbies[room_id]
+    if username not in tables[table_id]:
+        emit('message', f"table {table_id} is now closed", to=table_id)
+        emit('close', to=table_id)
+        leave_room(table_id)
+        del tables[table_id]
 
 
 @socket.event()
 def message(data):
-    room_id = data['room']
-    if room_id not in lobbies.keys():
-        emit('message', "Lobby does not exist")
+    table_id = data['table']
+    if table_id not in tables.keys():
+        emit('message', "table does not exist")
     else:
         msg = escape_html(data['msg'])
         username = data['username']
-        emit('message', f"{username}: {msg}", to=room_id)
+        emit('message', f"{username}: {msg}", to=table_id)
 
 
 def valid_username(username):
