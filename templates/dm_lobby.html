@@ -32,7 +32,7 @@
                 socket.emit("join", { "username": "{{ user }}", "room": "{{ id }}" });
             });
             window.onbeforeunload = function () {
-            socket.emit('dm_leave', {"username": "{{ user }}", "room": "{{ id }}" });
+            socket.emit('gm_leave', {"username": "{{ user }}", "room": "{{ id }}" });
             };
 
             socket.on('message', function(msg){

@@ -24,7 +24,7 @@ def landing_page():
     if username:
         response = redirect('/home')
         response.set_cookie('lobby', '')
-        response.set_cookie('dm', 'false')
+        response.set_cookie('gm', 'false')
         return response
     return render_template('landing.html')
 
@@ -37,7 +37,7 @@ def home_page():
         if lobby_id != "":
             response = redirect('/home')
             response.set_cookie('lobby', '')
-            response.set_cookie('dm', 'false')
+            response.set_cookie('gm', 'false')
             return response
         return render_template('home.html', username=username)
     else:
@@ -49,6 +49,7 @@ def logout():
     response = redirect("/")
     response.set_cookie("username", "", expires=0)
     response.set_cookie('lobby', '', expires=0)
+    response.set_cookie('gm', 'false', expires=0)
     return response
 
 
@@ -99,7 +100,7 @@ def join_lobby():
     else:
         response = redirect(f'/lobby/{lobby_id}')
         response.set_cookie('lobby_id', lobby_id)
-        response.set_cookie('dm', 'false')
+        response.set_cookie('gm', 'false')
         return response
 
 
@@ -107,10 +108,10 @@ def join_lobby():
 def lobby(lobby_id):
     if lobby_id in lobbies.keys():
         username = request.cookies.get('username')
-        is_dm = request.cookies.get('dm')
+        is_gm = request.cookies.get('gm')
         if username:
             lobbies[lobby_id].append(username)
-            if is_dm == 'true':
+            if is_gm == 'true':
                 return render_template('dm_lobby.html', id=lobby_id, user=username, async_mode="threading")
             else:
                 return render_template('lobby.html', id=lobby_id, user=username, async_mode="threading")
@@ -128,7 +129,7 @@ def create_lobby():
         lobbies[lobby_id] = []
         response = redirect(f'/lobby/{lobby_id}')
         response.set_cookie('lobby_id', lobby_id)
-        response.set_cookie('dm', 'true')
+        response.set_cookie('gm', 'true')
         return response
     else:
         return redirect('/home')
@@ -160,7 +161,7 @@ def player_leave(data):
 
 
 @socket.event()
-def dm_leave(data):
+def gm_leave(data):
     room_id = data['room']
     username = data['username']
     if room_id in lobbies.keys():
