@@ -26,6 +26,7 @@ def landing_page():
         response.set_cookie('lobby', '')
         response.set_cookie('gm', 'false')
         return response
+
     return render_template('landing.html')
 
 
