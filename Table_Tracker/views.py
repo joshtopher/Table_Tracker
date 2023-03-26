@@ -1,21 +1,16 @@
-from flask import Flask, request, render_template, redirect
-import firebase_admin
-from flask_socketio import SocketIO, join_room, leave_room, emit
-from firebase_admin import credentials, firestore
+from flask import request, render_template, redirect
+from flask_socketio import  join_room, leave_room, emit
 import random
 import time
+from Table_Tracker import app, socket, repo, rooms
 
-cred = credentials.Certificate("config.json")
-fb = firebase_admin.initialize_app(cred)
-db = firestore.client()
 
-app = Flask(__name__)
-socket = SocketIO(app)
+ROOMS = rooms.RoomRegistry()
 
-# dict of table id to list of users in table
-tables = {}
 
 all_chars = "ABCDEFGHIJKLMONPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890_-"
+
+
 
 
 @app.get('/')
@@ -61,15 +56,11 @@ def register():
         return "Invalid Username"
     if len(pwd) < 6 or len(pwd) > 20:
         return "Invalid Password"
-    users_ref = db.collection('users').where('username', '==', username)
-    user = users_ref.get()
+    user = repo.get_user_by_name(username)
     if user:
         return "Username Taken"
     else:
-        db.collection('users').add({
-            'username': username,
-            'password': pwd
-        })
+        repo.add_user(username, pwd)
         return redirect('/')
 
 
@@ -78,8 +69,7 @@ def login():
     username = escape_html(request.form['username'])
     pwd = request.form['password']
 
-    users_ref = db.collection('users').where('username', '==', username)
-    user = users_ref.get()
+    user = repo.get_user_by_name(username)
     if not user:
         return "Username or Password is Incorrect"
     else:
@@ -95,7 +85,7 @@ def login():
 @app.post('/join-table')
 def join_table():
     table_id = request.form['table_id']
-    if table_id not in tables.keys():
+    if ROOMS.room_exists(table_id):
         return "table does not exist"
     else:
         response = redirect(f'/table/{table_id}')
@@ -106,11 +96,11 @@ def join_table():
 
 @app.get('/table/<table_id>')
 def table(table_id):
-    if table_id in tables.keys():
+    if ROOMS.room_exists(table_id):
         username = request.cookies.get('username')
         is_gm = request.cookies.get('gm')
         if username:
-            tables[table_id].append(username)
+            ROOMS.add_user_to_room(table_id, username)
             if is_gm == 'true':
                 return render_template('dm_lobby.html', id=table_id, user=username, async_mode="threading")
             else:
@@ -123,10 +113,9 @@ def table(table_id):
 
 @app.get('/create-table')
 def create_table():
-    table_id = generate_table_id()
     username = request.cookies.get('username')
     if username:
-        tables[table_id] = []
+        table_id = ROOMS.add_room()
         response = redirect(f'/table/{table_id}')
         response.set_cookie('table_id', table_id)
         response.set_cookie('gm', 'true')
@@ -153,9 +142,9 @@ def join(data):
 def player_leave(data):
     table_id = data['table']
     username = data['username']
-    tables[table_id].remove(username)
+    ROOMS.remove_user_from_room(table_id, username)
     time.sleep(1)
-    if username not in tables[table_id]:
+    if not ROOMS.user_in_room(table_id, username):
         emit('message', f"{username} left the table", to=table_id)
         leave_room(table_id)
 
@@ -164,20 +153,20 @@ def player_leave(data):
 def gm_leave(data):
     table_id = data['table']
     username = data['username']
-    if table_id in tables.keys():
-        tables[table_id].remove(username)
+    if ROOMS.room_exists(table_id):
+        ROOMS.remove_user_from_room(table_id, username)
     time.sleep(1)
-    if username not in tables[table_id]:
+    if not ROOMS.user_in_room(table_id, username):
         emit('message', f"table {table_id} is now closed", to=table_id)
         emit('close', to=table_id)
         leave_room(table_id)
-        del tables[table_id]
+        ROOMS.remove_room(table_id)
 
 
 @socket.event()
 def message(data):
     table_id = data['table']
-    if table_id not in tables.keys():
+    if ROOMS.room_extsts(table_id):
         emit('message', "table does not exist")
     else:
         msg = escape_html(data['msg'])
@@ -194,4 +183,3 @@ def valid_username(username):
     return True
 
 
-socket.run(app, allow_unsafe_werkzeug=True, debug=True)
