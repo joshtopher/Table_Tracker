@@ -73,7 +73,7 @@ def login():
     if not user:
         return "Username or Password is Incorrect"
     else:
-        if user[0].to_dict()['password'] != pwd:
+        if user.to_dict()['password'] != pwd:
             return redirect('/')
         else:
             response = redirect("/home")
@@ -85,7 +85,7 @@ def login():
 @app.post('/join-table')
 def join_table():
     table_id = request.form['table_id']
-    if ROOMS.room_exists(table_id):
+    if not ROOMS.room_exists(table_id):
         return "table does not exist"
     else:
         response = redirect(f'/table/{table_id}')
@@ -122,10 +122,6 @@ def create_table():
         return response
     else:
         return redirect('/home')
-
-
-def generate_table_id():
-    return ''.join(random.choice("abcdefghiklmopqrstuvwxyz1234567890") for _ in range(6))
 
 
 def escape_html(text):
@@ -166,7 +162,7 @@ def gm_leave(data):
 @socket.event()
 def message(data):
     table_id = data['table']
-    if ROOMS.room_extsts(table_id):
+    if not ROOMS.room_exists(table_id):
         emit('message', "table does not exist")
     else:
         msg = escape_html(data['msg'])
